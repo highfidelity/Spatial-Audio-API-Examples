@@ -1,4 +1,4 @@
-# "Tracks" Example
+# "Bots" Example
 
 ## Author
 Luis Cuenca
