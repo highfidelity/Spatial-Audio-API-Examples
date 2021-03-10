@@ -8,10 +8,9 @@
              "z_min": 1.0,
              "z_max": 7.0,
              "attenuation_coefficients": {
-                "all": 1.0
              },
              "doors": {
-                 "hallway1": {
+                 "all": {
                      "x": -1.0,
                      "z": 5.0,
                      "r": 0.75
@@ -26,28 +25,23 @@
              "z_min": 1.0,
              "z_max": 7.0,
              "attenuation_coefficients": {
-                "all": 1.0
              },
              "doors": {
-                 "hallway1": {
+                 "all": {
                      "x": 1.0,
                      "z": 5.0,
                      "r": 0.75
                  }            
              }             
         },
-        "hallway1": {
-             "x_min": -1.0,
-             "x_max": 1.0,
+        "all": {
+             "x_min": -7.0,
+             "x_max": 7.0,
              "y_min": 0,
              "y_max": 3.0,
-             "z_min": 1.0,
-             "z_max": 7.0,
+             "z_min": -1.0,
+             "z_max": 12.0,
              "attenuation_coefficients": {
-                "hallway2": 0.5,
-                "hallway3": 0.5,
-                "hallway4": 0.5,
-                "hallway5": 0.5
              },
              "doors": {
                  "room1": {
@@ -59,132 +53,8 @@
                      "x": -1.0,
                      "z": 5.0,
                      "r": 0.75
-                 },
-                 "hallway2": {
-                     "x": 0.0,
-                     "z": 7.0,
-                     "r": 1.0
-                 },
-                 "hallway3": {
-                     "x": 0.0,
-                     "z": 1.0,
-                     "r": 1.0
-                 }                  
-             }         
-        },
-        "hallway2": {
-             "x_min": -7.0,
-             "x_max": 7.0,
-             "y_min": 0,
-             "y_max": 3.0,
-             "z_min": 7.0,
-             "z_max": 12.0,
-             "attenuation_coefficients": {
-                "hallway1": 0.5,
-                "hallway3": 0.5,
-                "hallway4": 0.5,
-                "hallway5": 0.5
-             },
-             "doors": {
-                 "hallway1": {
-                     "x": 0.0,
-                     "z": 7.0,
-                     "r": 1.0
-                 },
-                 "hallway4": {
-                     "x": -6.0,
-                     "z": 7.0,
-                     "r": 1.0
-                 },
-                 "hallway5": {
-                     "x": 6.0,
-                     "z": 7.0,
-                     "r": 1.0
-                 }   
-             }         
-        },
-        "hallway3": {
-             "x_min": -7.0,
-             "x_max": 7.0,
-             "y_min": 0,
-             "y_max": 3.0,
-             "z_min": -1.0,
-             "z_max": 1.0,
-             "attenuation_coefficients": {
-                "hallway1": 0.5,
-                "hallway2": 0.5,
-                "hallway4": 0.5,
-                "hallway5": 0.5
-             },
-             "doors": {
-                 "hallway1": {
-                     "x": 0.0,
-                     "z": 1.0,
-                     "r": 1.0
-                 },
-                 "hallway4": {
-                     "x": 6.0,
-                     "z": 1.0,
-                     "r": 1.0
-                 },
-                 "hallway5": {
-                     "x": -6.0,
-                     "z": 1.0,
-                     "r": 1.0
-                 }     
-             }         
-        },
-        "hallway4": {
-             "x_min": -7.0,
-             "x_max": -5.0,
-             "y_min": 0,
-             "y_max": 3.0,
-             "z_min": 1.0,
-             "z_max": 7.0,
-             "attenuation_coefficients": {
-                "hallway1": 0.5,
-                "hallway2": 0.5,
-                "hallway3": 0.5,
-                "hallway5": 0.5
-             },
-             "doors": {
-                 "hallway2": {
-                     "x": -6.0,
-                     "z": 7.0,
-                     "r": 1.0
-                 },             
-                 "hallway3": {
-                     "x": -6.0,
-                     "z": 1.0,
-                     "r": 1.0
-                 }               
-             }         
-        },
-        "hallway5": {
-             "x_min": 5.0,
-             "x_max": 7.0,
-             "y_min": 0,
-             "y_max": 3.0,
-             "z_min": 1.0,
-             "z_max": 7.0,
-             "attenuation_coefficients": {
-                "hallway1": 0.5,
-                "hallway2": 0.5,
-                "hallway3": 0.5,
-                "hallway4": 0.5
-             },
-             "doors": {
-                 "hallway5": {
-                     "x": 6.0,
-                     "z": 1.0,
-                     "r": 1.0
-                 },
-                 "hallway2": {
-                     "x": 6.0,
-                     "z": 7.0,
-                     "r": 1.0
-                 }                    
-             }         
-        }   
+                 }
+             }
+        }
     }
 }

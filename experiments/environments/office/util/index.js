@@ -46,6 +46,28 @@ function generateClientFile(outputFile) {
     }
 }
 
+async function deleteZones(stack, jwt, space) {
+    let space_url = function(path) {
+        return `https://loadbalancer-${stack}.highfidelity.io/api/v1/spaces/${space}/settings${path}?token=${jwt}`
+    }
+    console.log("Deleting zone and attenuation settings");
+ 
+    // delete existing zones by retrieving
+    await fetch(space_url(`/zones/`), {
+        method: 'DELETE'
+    });
+    // reset the global attenuation_coefficients
+    await fetch(space_url(''), {
+        method: 'POST',
+        headers: {
+            'Content-type': 'application/json; charset=UTF-8' // Indicates the content 
+        },        
+        body: JSON.stringify({
+            'global-attenuation': 0.5
+        })
+    });    
+}
+
 async function generateZones(stack, jwt, space) {
     
     let space_url = function(path) {
@@ -53,22 +75,13 @@ async function generateZones(stack, jwt, space) {
     }
     console.log("Uploading audio and zone settings");
  
-    // delete existing zones by retrieving all zones
-    // and deleting them one by one.  This will also
-    // delete all zone_attenuation objects
-    nodes = fetch(space_url('/zones'))
-        .then(response => response.json())
-        .then(response => {
-            response.forEach(zone => {
-                let zone_id = zone['id'];
-                fetch(space_url(`/zones/${zone_id}`), {
-                    method: 'DELETE'
-                });
-            });
-        });
+    // delete existing zones
+    await fetch(space_url(`/zones/`), {
+        method: 'DELETE'
+    });
         
     // set the global attenuation_coefficients
-    fetch(space_url(''), {
+    await fetch(space_url(''), {
         method: 'POST',
         headers: {
             'Content-type': 'application/json; charset=UTF-8' // Indicates the content 
@@ -78,17 +91,13 @@ async function generateZones(stack, jwt, space) {
         })
     });
     
-    let mansion = { x_min: 0, x_max: 0, y_min: 0, y_max: 0, z_min:0, z_max:0 }
-    
     let zone_to_id = {};
+    
+    let zone_post_data = []
     // create new zones
     for (const [room, roomData] of Object.entries(MAP.rooms)) {
-        await fetch(space_url('/zones/create'), {
-            method: 'POST',
-            headers: {
-                'Content-type': 'application/json; charset=UTF-8' // Indicates the content 
-            },        
-            body: JSON.stringify({
+        zone_post_data.push({
+        
                 'name': room,
                 'x-min': roomData.x_min,
                 'x-max': roomData.x_max,
@@ -96,47 +105,60 @@ async function generateZones(stack, jwt, space) {
                 'y-max': roomData.y_max,
                 'z-min': roomData.z_min,
                 'z-max': roomData.z_max
-        })})
-        .then(response => response.json())
-        .then(response => {
-            zone_to_id[room] = response['id'];
-        });
+        })       
     }
+    
+    await fetch(space_url('/zones'), {
+        method: 'POST',
+        headers: {
+            'Content-type': 'application/json; charset=UTF-8' // Indicates the content 
+        },
+        body: JSON.stringify(zone_post_data)
+    })
+    .then(response => response.json())
+    .then(response => {
+        response.forEach(zone => {
+            zone_to_id[zone['name']] = zone['id'];
+        });        
+    });
+
 
     // create all of the zone attenuation objects
     let za_offset = 1;
-    let set_zone = async function (source, listener, coefficient) {
-        await fetch(space_url('/zone_attenuations/create'), {
-            method: 'POST',
-            headers: {
-                'Content-type': 'application/json; charset=UTF-8' // Indicates the content 
-            },        
-            body: JSON.stringify({
-                'source-zone-id': zone_to_id[source],
-                'listener-zone-id': zone_to_id[listener],
-                'za-offset': za_offset++,
-                'attenuation': coefficient
-        })});
-    }
+    let zone_attenuation_data = [];
     for (const [room, roomData] of Object.entries(MAP.rooms)) {
         zones = new Set();
         for (const [room, roomData] of Object.entries(MAP.rooms)) {
             zones.add(room);
         }
         for (const [zone, coefficient] of Object.entries(roomData.attenuation_coefficients)) {
-            await set_zone(room, zone, coefficient);
+            zone_attenuation_data.push({
+                'source-zone-id': zone_to_id[room],
+                'listener-zone-id': zone_to_id[zone],
+                'za-offset': za_offset++,
+                'attenuation': coefficient
+            });
             zones.delete(zone);            
         }
             
         // all 'self' zones and zones not specified.
         for (const zone of zones) {
-            if (room !== zone) {
-                await set_zone(room, zone, 1.0);
-            } else {
-                await set_zone(room, zone, 0.5);               
-            }
+            zone_attenuation_data.push({
+                'source-zone-id': zone_to_id[room],
+                'listener-zone-id': zone_to_id[zone],
+                'za-offset': za_offset++,
+                'attenuation': (room !== zone) ? 1.0 : 0.5
+            });
         }
     }
+
+    await fetch(space_url('/zone_attenuations'), {
+        method: 'POST',
+        headers: {
+            'Content-type': 'application/json; charset=UTF-8' // Indicates the content 
+        },
+        body: JSON.stringify(zone_attenuation_data)
+    });
 }
 
 
@@ -153,6 +175,10 @@ const argv = yargs
     })
     .options('z', {
         describe: 'Update zones',
+        type: 'boolean'
+    })
+    .options('d', {
+        describe: 'Delete zones',
         type: 'boolean'
     })
     .options('j', {
@@ -184,7 +210,12 @@ if (argv.c) {
         console.log('Must pass in jwt (j) and space id (s)');
     }
     generateZones(argv.stack, argv.j, argv.s);
+} else if (argv.d) {
+    if (!argv.j && ~argv.s) {
+        console.log('Must pass in jwt (j) and space id (s)');
+    }    
+    deleteZones(argv.stack, argv.j, argv.s);
 } else {
-    console.log('Must pass c or z');
+    console.log('Must pass c,z, or d');
 }    
 

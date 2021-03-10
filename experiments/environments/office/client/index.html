@@ -320,9 +320,10 @@
 
                     // Connect to the HiFi Audio API server!
                     // Supply your own JWT here.
-                    const HIFI_AUDIO_JWT = "";
-
-                    hifiCommunicator.connectToHiFiAudioAPIServer(HIFI_AUDIO_JWT).
+                    const HIFI_AUDIO_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfaWQiOiI4YmFjZGViZS1hMDRjLTQ1MDQtOGU2Yi0wNDEzZDk2NmEwNzgiLCJ1c2VyX2lkIjoiY2xpZW50Iiwic3BhY2VfaWQiOiI2ZjRkYzg0My0yZGM0LTQ1N2MtODcyMC0zYzkzNDNlMWI0NzkiLCJzdGFjayI6ImF1ZGlvbmV0LW1peGVyLWF1ZGlvbmV0LXMtcm94LTEifQ.MlQSYqnAbrGsktLwo8RW_tFNgx4S4PuS75GrpkjfSYs";
+                    const HIFI_STACK_NAME = "loadbalancer-audionet-s-rox-1.highfidelity.io";
+                    
+                    hifiCommunicator.connectToHiFiAudioAPIServer(HIFI_AUDIO_JWT, HIFI_STACK_NAME).
                     catch (e => {
                         console.error(`Error connecting to High Fidelity:\n${e}`);
                         statusDisplay.innerHTML = 'Connection error. Retry?';
