@@ -26,11 +26,11 @@ body {
     text-overflow: ellipsis;
 }
 
-.verticalContainer {
+.serverAddressContainer {
     display:inline-block;
     height:100%;
     vertical-align:middle;
-    width: calc(100vw - 514px);
+    width: calc(100vw - 584px);
 }
 
 .jwtInput { 
@@ -60,6 +60,7 @@ body {
     color: rgb(147, 170, 149);
     opacity: 0.5;
 }
+
 
 .controlContainer {
     display: grid;
@@ -141,6 +142,39 @@ body {
     font-size: 12px;
 }
 
+
+
+
+.verticalContainer {
+    display:inline-block;
+    height:100%;
+    vertical-align:middle;
+    width: 100px;
+    margin: 0px;
+    padding: 0px;
+}
+
+.coordSystemSelect {
+    display:inline-block;
+    width: 100%;
+    background-color: rgb(26, 29, 34);
+    color: white;
+    margin: 3px;
+}
+.sendOrientationSelect {
+    display:inline-block;
+    width: 100%;
+    background-color: rgb(26, 29, 34);
+    color: white;
+    margin: 3px;
+}
+.receiveOrientationSelect {
+    display:inline-block;
+    width: 100%;
+    background-color: rgb(26, 29, 34);
+    color: white;
+    margin: 3px;
+}
 
 .muteButton {
     float: right;

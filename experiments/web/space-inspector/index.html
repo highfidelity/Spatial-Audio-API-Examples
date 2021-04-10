@@ -13,9 +13,24 @@
             <div class="controlBar">
                 <button class="triggerButton"></button>
                 
-                <div class="verticalContainer">
+                <div class="serverAddressContainer">
                     <textarea class="hostInput" rows="1">api.highfidelity.com is the default host, modify here or as a url parameter '?hostURL=api-staging.highfidelity.com'</textarea>
                     <textarea class="jwtInput">Enter HIFI AUDIO JWT here or as a url parameter '?jwt=...'</textarea>
+                </div>
+
+                <div class="verticalContainer">
+                    <select class="coordSystemSelect">
+                        <option value="0">Y up / Right Handed</option>
+                        <option value="1">Y up / Left Handed</option>
+                    </select>
+                    <select class="sendOrientationSelect">
+                        <option value="0">send Quat</option>
+                        <option value="1">send Euler</option>
+                    </select>
+                    <select class="receiveOrientationSelect">
+                        <option value="0">receive Quat</option>
+                        <option value="1">receive Euler</option>
+                    </select>
                 </div>
 
                 <div class="muteButton muteButton--disabled mic-on"></div>
@@ -170,8 +185,8 @@
         </div>
 
         <script src="https://threejs.org/build/three.min.js"></script>
-        <!--<script src="HighFidelityAudio-latest.js"></script>-->
-        <script src="https://hifi-spatial-audio-api.s3-us-west-2.amazonaws.com/releases/latest/HighFidelityAudio-latest.js"></script>
+        <script src="HighFidelityAudio-latest.js"></script>
+        <!--<script src="https://hifi-spatial-audio-api.s3-us-west-2.amazonaws.com/releases/latest/HighFidelityAudio-latest.js"></script>-->
       
         <script>
             const DEG_TO_RAD = Math.PI / 180;
@@ -183,6 +198,26 @@
             const BODY_RADIUS = 0.2; // THis size control the radius of the Dot
 
             const SPHERE_TESSELLATION = 32;
+
+            class Our3DAxisConfiguration {               
+                // default coordinate system is  the mixer sapce default aka Right handed, Y-up, Z-back
+                static _axisConfiguration = new HighFidelityAudio.AxisConfiguration({
+                                                    coordinateSystem: HighFidelityAudio.CoordinateSystemConvention.X_right_Y_up_Z_back_RH,
+                                                    eulerOrder: HighFidelityAudio.OrientationEuler3DOrder.YawPitchRoll});
+                
+                static setCoordinateSystem(coordSystem) {
+                    if (this._axisConfiguration.coordinateSystem != coordSystem) {
+                        this._axisConfiguration.setCoordinateSystem(coordSystem);
+                        HighFidelityAudio.ourHiFiAxisConfiguration.setCoordinateSystem(coordSystem);
+                    }
+                }
+
+                static get() {
+                    return this._axisConfiguration;
+                }
+            }
+            Our3DAxisConfiguration.get();
+
 
             class Frame {
                 static geometryOrigin = null;
@@ -349,6 +384,14 @@
                     if (!Dot.geometryBody) {
                         Dot.initialize();
                     }
+                    
+                    // Cached HIFI Client space position and orientation
+                    // They are simply here to avoid recreating these objects constantly
+                    // when translating to or from the THREE equivalents
+                    // DO NOT edit or read these values directly, use the proper set/get calls
+                    this._hifiClientPos = new HighFidelityAudio.Point3D();
+                    this._hifiClientQuat = new HighFidelityAudio.OrientationQuat3D();
+                    this._hifiClientEuler = new HighFidelityAudio.OrientationEuler3D();
 
                     let scene = config.scene;
 
@@ -430,31 +473,53 @@
                 }
 
                 setHifiPosition(x, y, z) {
-                    this.setTHREEPosition(x, y, z);    
+                    this._hifiClientPos.x = x;
+                    this._hifiClientPos.y = y;
+                    this._hifiClientPos.z = z;
+
+                    // convert the position incoming from Hifi Client space to the THREEE space  
+                    let p = HighFidelityAudio.AxisUtilities.convertPoint3DToMixerSpace(Our3DAxisConfiguration._axisConfiguration, this._hifiClientPos);
+
+                    this.setTHREEPosition(p.x, p.y, p.z);    
                 }
 
 
                 getHifiPosition() {
-                    return new HighFidelityAudio.Point3D({
-                                x: this._node.position.x,
-                                y: this._node.position.y,
-                                z: this._node.position.z });
+                    this._hifiClientPos.x = this._node.position.x;
+                    this._hifiClientPos.y = this._node.position.y;
+                    this._hifiClientPos.z = this._node.position.z;
+
+                    // convert the position incoming from THREE space to the HIFI Client space
+                    this._hifiClientPos = HighFidelityAudio.AxisUtilities.convertPoint3DFromMixerSpace(Our3DAxisConfiguration._axisConfiguration, this._hifiClientPos);
+
+                    return this._hifiClientPos;
                 }
                 
                 setHifiOrientationQuat(x, y, z, w) {
-                    this._node.quaternion.x = x;
-                    this._node.quaternion.y = y;
-                    this._node.quaternion.z = z;
-                    this._node.quaternion.w = w;
+                    this._hifiClientQuat.x = x;
+                    this._hifiClientQuat.y = y;
+                    this._hifiClientQuat.z = z;
+                    this._hifiClientQuat.w = w;
+
+                    // convert the quaternion incoming from Hifi Client space to the THREEE space  
+                    let q = HighFidelityAudio.AxisUtilities.convertOrientationQuat3DToMixerSpace(Our3DAxisConfiguration._axisConfiguration, this._hifiClientQuat);
+
+                    this._node.quaternion.x = q.x;
+                    this._node.quaternion.y = q.y;
+                    this._node.quaternion.z = q.z;
+                    this._node.quaternion.w = q.w;
                 }
 
                 getHifiOrientationQuat() {
-                    return new HighFidelityAudio.OrientationQuat3D({
-                            x: this._node.quaternion.x,
-                            y: this._node.quaternion.y,
-                            z: this._node.quaternion.z,
-                            w: this._node.quaternion.w,
-                         });
+                    this._hifiClientQuat.x = this._node.quaternion.x;
+                    this._hifiClientQuat.y = this._node.quaternion.y;
+                    this._hifiClientQuat.z = this._node.quaternion.z;
+                    this._hifiClientQuat.w = this._node.quaternion.w;
+                    
+                    // convert the quaternion incoming from THREE space to the HIFI Client space
+                    this._hifiClientQuat = HighFidelityAudio.AxisUtilities.convertOrientationQuat3DFromMixerSpace(Our3DAxisConfiguration._axisConfiguration, this._hifiClientQuat);
+
+                    return this._hifiClientQuat;
                 }
 
                 setTHREEOrientationEuler(pitch, yaw, roll) {
@@ -465,6 +530,7 @@
                 }
 
                 setHifiOrientationEuler(pitch, yaw, roll) {
+
                     this.setTHREEOrientationEuler( pitch * DEG_TO_RAD, yaw * DEG_TO_RAD, roll * DEG_TO_RAD);
                 }
 
@@ -727,6 +793,7 @@
             };
 
             class World {
+
                 constructor(config) {
                     this.config = config;
                     this.config.floorPlaneAltitude = (config.floorPlaneAltitude ? config.floorPlaneAltitude : 0);
@@ -924,7 +991,12 @@
                     let hue = Player.rand(seed, 0, 360);
                     return `hsl(${hue},100%,50%)`;
                 }
-                
+
+                static receivingOrientationFromEuler = false;
+                static setReceivingOrientationFromEuler(receiveEuler) {
+                    Player.receivingOrientationFromEuler = receiveEuler;
+                }
+
                 constructor(config, id, ghost) {
                     super(config, Player.colorFromString(id), ghost);
                     this.setId(id);
@@ -952,24 +1024,34 @@
                     if (data.position !== null) {
                         this.setHifiPosition(data.position.x, data.position.y, data.position.z);
                     }
-                    if (data.orientationQuat !== null) {
-                        this.setHifiOrientationQuat(
-                            data.orientationQuat.x,
-                            data.orientationQuat.y,
-                            data.orientationQuat.z,
-                            data.orientationQuat.w);
+
+                    if (Player.receivingOrientationFromEuler) {
+                        if (data.orientationEuler !== null) {
+                            this.setHifiOrientationEuler(
+                                data.orientationEuler.pitchDegrees,
+                                data.orientationEuler.yawDegrees,
+                                data.orientationEuler.rollDegrees);
+                        }
+                    } else {
+                        if (data.orientationQuat !== null) {
+                            this.setHifiOrientationQuat(
+                                data.orientationQuat.x,
+                                data.orientationQuat.y,
+                                data.orientationQuat.z,
+                                data.orientationQuat.w);
+                        }
                     }
-                    if (data.orientationEuler !== null) {
-                        this.setHifiOrientationEuler(
-                            data.orientationEuler.pitchDegrees,
-                            data.orientationEuler.yawDegrees,
-                            data.orientationEuler.rollDegrees);
-                    }
+
                     this.receivedNewValues++;
                 }
             };
 
             class MyPlayer extends Player {
+
+                static sendingOrientationFromEuler = false;
+                static setSendingOrientationFromEuler(sendEuler) {
+                    MyPlayer.sendingOrientationFromEuler = sendEuler;
+                }
 
                 constructor(config) {
                     super(config, null);
@@ -1138,14 +1220,15 @@
                 // called whenever the controller moves MyPlayer
                 updateCommunicatorData() {
                     if (this.isConnected() && this.hifiCommunicator) {
-                       
-                        let currentPosition = this.getHifiPosition();
-                        let currentOrientationEuler = this.getHifiOrientationEuler();
 
-                        let response = this.hifiCommunicator.updateUserDataAndTransmit({
-                            position: currentPosition,
-                            orientationEuler: currentOrientationEuler 
-                        });
+                        let currentData = { position: this.getHifiPosition() };
+                        if (MyPlayer.sendingOrientationFromEuler) {
+                            currentData.orientationEuler = this.getHifiOrientationEuler();
+                        } else {
+                            currentData.orientationQuat = this.getHifiOrientationQuat();
+                        }
+
+                        let response = this.hifiCommunicator.updateUserDataAndTransmit(currentData);
                     }
                 }
             }
@@ -1352,7 +1435,8 @@
             } 
 
             class App {
-                constructor(config, canvas, triggerButton, jwtInput, hostInput, muteButton, muteSpeakerButton, frameButton, inspectorFrame, statusFrame, helpButton, helpFrame) {
+                constructor(config, canvas, triggerButton, jwtInput, hostInput, muteButton, muteSpeakerButton, frameButton,
+                    coordSystemSelect, sendOrientationSelect, receiveOrientationSelect, inspectorFrame, statusFrame, helpButton, helpFrame) {
                     this.config = config;
                     this.space = null;
 
@@ -1397,6 +1481,14 @@
                     // 3d axis button
                     this.frameButton = frameButton;
                     this.frameButton.addEventListener("click", this.onFrame.bind(this), false);
+
+                    // Coordinate system and euler/quaternion options
+                    this.coordSystemSelect = coordSystemSelect;
+                    this.coordSystemSelect.addEventListener("click", this.onCoordinateSystem.bind(this), false);
+                    this.sendOrientationSelect = sendOrientationSelect;
+                    this.sendOrientationSelect.addEventListener("click", this.onSendOrientation.bind(this), false);
+                    this.receiveOrientationSelect = receiveOrientationSelect;
+                    this.receiveOrientationSelect.addEventListener("click", this.onReceiveOrientation.bind(this), false);
 
                     // Help button and panel
                     this.helpButton = helpButton;
@@ -1524,6 +1616,23 @@
                     }
                 }
 
+                onCoordinateSystem(e) {
+                    // switching the coordinate system used is taken care in the world
+                    if (this.coordSystemSelect.value === "0") {
+                        Our3DAxisConfiguration.setCoordinateSystem(HighFidelityAudio.CoordinateSystemConvention.X_right_Y_up_Z_back_RH);
+                    } else if (this.coordSystemSelect.value === "1") {
+                        Our3DAxisConfiguration.setCoordinateSystem(HighFidelityAudio.CoordinateSystemConvention.X_right_Y_up_Z_front_LH);
+                    }
+                }
+
+                onSendOrientation(e) {
+                    MyPlayer.setSendingOrientationFromEuler(this.sendOrientationSelect.value === "1");
+                }
+
+                onReceiveOrientation(e) {
+                    Player.setReceivingOrientationFromEuler(this.receiveOrientationSelect.value === "1");
+                }
+
                 onGhost() {
                     let flag = (this.showGhost !== null ? this.showGhost : false); // initialize hidden
                     this.showGhost = !flag;
@@ -1631,12 +1740,21 @@
                 let muteSpeakerButton = document.querySelector(".muteSpeakerButton");
                 let muteButton = document.querySelector(".muteButton");
                 let frameButton = document.querySelector(".frameButton");
+
+                let coordSystemSelect = document.querySelector(".coordSystemSelect");
+                let sendOrientationSelect = document.querySelector(".sendOrientationSelect");
+                let receiveOrientationSelect = document.querySelector(".receiveOrientationSelect");
+
                 let inspectorFrame = document.querySelector(".inspectorFrame");
                 let statusFrame = document.querySelector(".statusContainer");
                 let helpButton = document.querySelector(".helpButton");
                 let helpFrame = document.querySelector(".helpFrame");
 
-                let app = new App(config, canvasElement, triggerButton, jwtInput, hostInput, muteButton, muteSpeakerButton, frameButton, inspectorFrame, statusFrame, helpButton, helpFrame);
+                let app = new App(config, canvasElement,
+                    triggerButton, jwtInput, hostInput,
+                    muteButton, muteSpeakerButton,
+                    frameButton, coordSystemSelect, sendOrientationSelect, receiveOrientationSelect,
+                    inspectorFrame, statusFrame, helpButton, helpFrame);
             });
         </script>
     </body>
