@@ -5,8 +5,8 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "bots": "node -r esm -- ./integration-test.js",
-    "bandwidth": "node -r esm --unhandled-rejections=strict -- ./testBandwidth.js"
+    "bots": "node -r esm -- ./src/tests/integration-test.js",
+    "bandwidth": "node -r esm --unhandled-rejections=strict -- ./src/tests/testBandwidth.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,9 @@
   "dependencies": {
     "audio-decode": "^1.4.0",
     "audio-format": "^2.3.2",
+    "cap": "^0.2.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
     "gyp": "^0.5.0",
     "hifi-spatial-audio": "*",
     "jose": "^3.9.0",

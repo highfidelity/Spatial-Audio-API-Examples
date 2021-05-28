@@ -37,12 +37,11 @@ sleep 1
 
 echo -e "${GREEN}\nJust kidding. Let's start with a simple web app. I will set it up on a local server for you.${DIM}"
 cd examples/web/simple
-cp ../../../hifiZip.zip .
 sed -i "s/let HiFiAudioJWT;/let HiFiAudioJWT = '${token}';/g" index.html
 touch Dockerfile
 echo -e "FROM python:3\n
 COPY [\"index.html\", \"./\"]\n
-RUN wget -O hifiZip.zip https://hifi-spatial-audio-api.s3.amazonaws.com/releases/main/highfidelity-hifi-audio-web.zip\n
+RUN wget -O hifiZip.zip https://hifi-spatial-audio-api.s3.amazonaws.com/releases/main/highfidelity-hifi-audio-web.zip \n
 RUN unzip hifiZip.zip\n
 CMD python3 -m http.server 8060"  > Dockerfile
 docker build --no-cache -f Dockerfile . -t simple | sed 's/\x1B\[[0-9;]\{1,\}[A-Za-z]//g'
